@@ -12,7 +12,7 @@ funcStr = """
 function addRecords(records) {
     var addButton = document.querySelector('#tabContent > form > fieldset:nth-child(8) > table:nth-child(5) > tbody:nth-child(1) > tr > td:nth-child(2) > table > tbody:nth-child(3) a');
     var rows = document.querySelectorAll('.RowdiscoveredOpenPorts');    
-    var discoverd = [].map.call(rows, function(r) {
+    var discovered = [].map.call(rows, function(r) {
         return [r.querySelector('input[name="eptOpenPortIPs"]').value, r.querySelector('input[name="eptOpenPortPorts"]').value, r.querySelector('input[name="eptOpenPortIdentifiedTypeVersions"]').value];
     });
     records.forEach(function(rec) {
