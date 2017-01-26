@@ -1,0 +1,31 @@
+function clickAllValid(table) {
+  var buttons = [].slice.call(table.querySelectorAll('input[value="Valid"]'));
+  function clickValid() {
+      while(buttons.length > 0 && buttons[0].style.display == "none") {
+        console.log('new length is ' + String(buttons.length));
+        buttons.splice(0, 1);
+      }
+      if(buttons.length === 0) { return; }
+      console.log('clicking');
+      buttons[0].click();
+      function waitForIt() {
+        if(buttons[0].style.display == "none") {
+          clickValid();
+        } else {
+          console.log('waiting...');
+          setTimeout(waitForIt, 1000);
+        }
+      }
+      waitForIt();
+    }
+clickValid();
+}
+
+[].forEach.call(document.querySelectorAll('#ui-tabs-1 > table table', function(t) {
+  var b = document.createElement('button');
+  b.addEventListener('click', function(e) {
+      clickAllValid(e.target.parentElement);
+  })
+  b.innerHTML="Mark All Valid";
+  t.insertBefore(b, t.firstChild);
+})
