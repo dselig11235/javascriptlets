@@ -16,6 +16,7 @@ function addRecords(records) {
         return [r.querySelector('input[name="eptOpenPortIPs"]').value, r.querySelector('input[name="eptOpenPortPorts"]').value, r.querySelector('input[name="eptOpenPortIdentifiedTypeVersions"]').value];
     });
     records.forEach(function(rec) {
+        rec[1] = rec[1].toUpperCase();
         var matchPosition = discovered.findIndex(function(r) {
             return r[0] == rec[0] && r[1] == rec[1];
         });
