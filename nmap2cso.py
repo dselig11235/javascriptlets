@@ -1,3 +1,14 @@
+#!/usr/bin/python
+
+
+from nmaptools import NmapResults
+from sys import argv
+from json import dumps
+
+results = NmapResults()
+results.open(argv[1:])
+dataStr = dumps(results.data)
+funcStr = """
 function addRecords(records) {
     var rows = document.querySelectorAll('.RowdiscoveredOpenPorts');    
     var discoverd = [].map.call(rows, function(r) {
@@ -9,4 +20,6 @@ function addRecords(records) {
         });
         rows[matchPosition].querySelector('input[name="eptOpenPortIdentifiedTypeVersions"]').value = rec[3];
     });
-}
+}"""
+
+print '{} addRecords({})'.format(funcStr, dataStr)
