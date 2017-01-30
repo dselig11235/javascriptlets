@@ -1,3 +1,14 @@
+#!/usr/bin/python
+
+
+from nmaptools import NmapResults
+from sys import argv
+from json import dumps
+
+results = NmapResults()
+results.open(argv[2:])
+dataStr = dumps(results.data)
+funcStr = """
 function addRecords(records) {
     var addButton = document.querySelector('#tabContent > form > fieldset:nth-child(8) > table:nth-child(5) > tbody:nth-child(1) > tr > td:nth-child(2) > table > tbody:nth-child(3) a');
     var rows = document.querySelectorAll('.RowdiscoveredOpenPorts');    
@@ -21,3 +32,24 @@ function addRecords(records) {
         }
     });
 }
+"""
+print '{} addRecords({})'.format(funcStr, dataStr)
+
+funcStr = """
+function addIPs(ips) {
+    var t = document.querySelector('#tabContent > form > fieldset:nth-child(8) > table:nth-child(7) > tbody:nth-child(1) > tr > td:nth-child(2) > table > tbody:nth-child(2)');
+    var existing = [].map.call(t.children, function(r) { 
+        return r.querySelector('input[name="eptOSAssetIPs"]').value
+    });
+    ips.forEach(function(ip) {
+        if(existing.indexOf(ip) < 0) {
+            document.querySelector('#tabContent > form > fieldset:nth-child(8) > table:nth-child(7) > tbody:nth-child(1) > tr > td:nth-child(2) > table > tbody:nth-child(3) > tr > td > a').click();
+            t.children[t.children.length - 1].querySelector('input[name="eptOSAssetIPs"]').value=ip;
+        }
+    });
+}
+"""
+
+with open(argv[1]) as f:
+    ips = [line.strip() for line in f.readlines()]
+print '{} addIPs({})'.format(funcStr, dumps(ips));
