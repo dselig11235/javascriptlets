@@ -8,7 +8,7 @@ class colors:
     white = "\033[1;37m"
     green = "\033[1;32m"
 
-class NmapResults:
+class NmapParser:
     def __init__(self):
         self.data = []
 
