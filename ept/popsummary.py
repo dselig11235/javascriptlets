@@ -11,10 +11,12 @@ path = os.path.dirname(os.path.realpath(__file__))
 parser = NmapParser()
 parser.open(argv[1:])
 dataStr = dumps(parser.data)
+uniqueIps = set(x[0] for x in parser.data)
 with open(os.path.join(path, 'addPorts.js'), 'r') as f:
     funcStr = f.read()
 print '{} addPorts({})'.format(funcStr, dataStr)
 
+dataStr = dumps([x for x in uniqueIps])
 with open(os.path.join(path, 'addICMP.js'), 'r') as f:
     funcStr = f.read()
-print '{} addICMP()'.format(funcStr)
+print '{} addICMP({})'.format(funcStr, dataStr)
