@@ -1,5 +1,6 @@
 from time import sleep
 from selenium import webdriver
+import os, re
 
 def getTitleFromFilename(filename):
     title = os.path.basename(filename)
@@ -34,6 +35,8 @@ class CSO(object):
     def setValue(self, element, value):
         if element.tag_name == 'textarea':
             self.driver.execute_script('arguments[0].innerText = arguments[1]', element, value)
+        elif element.tag_name == 'select':
+            self.driver.execute_script('arguments[0].value = arguments[1]', element, value)
         else:
             self.driver.execute_script('arguments[0].setAttribute("value", arguments[1])', element, value)
     def clickOn(self, s):
@@ -128,10 +131,10 @@ class CSO(object):
                         sleep(1)
                         self.addFigure(fig.strip())
                         sleep(1)
+                is_first_note = False
             else:
                 print "Skipping", notedir
 
-            is_first_note = False
         self.driver.find_element_by_xpath('//input[@type="submit" and @value="Save"]').click()
 
     def addAppendixFigure(self, filename):
@@ -139,3 +142,61 @@ class CSO(object):
         add_button.click()
         sleep(1)
         self.addFigure(filename)
+
+    def createScan(self, name, ips, scan_times="always"):
+        create_button = self.driver.find_element_by_xpath('//td[@class="MainItem" and div[contains(., "Create/Modify Schedules for Vulnerability and Configuration Scans")]]//span[contains(., "Create")]')
+        create_button.click()
+        sleep(2)
+        name_input = self.driver.find_element_by_id('scanScheduleName')
+        self.setValue(name_input, name)
+
+        #Select first scanner
+        self.driver.find_element_by_id('selectedScannerId').send_keys(Keys.DOWN)
+
+        #Set TS Only
+        self.driver.find_element_by_xpath('//input[@name="scan.scanTemplate.traceOnly"]').click()
+
+        #Save and Next
+        self.driver.find_element_by_xpath('//span[contains(., "Save and Next")]').click()
+        print "Saving page 1..."
+        sleep(3)
+
+        #Skip setting start time
+        self.driver.find_element_by_xpath('//span[contains(., "Save and Next")]').click()
+        print "Saving start times..."
+        sleep(3)
+
+        if scan_times != "always":
+            self.driver.find_element_by_xpath('//label[contains(., "Choose an existing scan time")]/input').click()
+            scan_val = self.driver.find_element_by_xpath('//select[@id="rtaPauseScheduleId"]/option[contains(., "<{}>")]'.format(scan_times)).get_attribute('value')
+
+            self.setValue(self.driver.find_element_by_xpath('//select[@id="rtaPauseScheduleId"]'), scan_val)
+            sleep(2)
+            #self.driver.find_element_by_xpath('//select[@id="rtaPauseScheduleId"]').send_keys("\t")
+        self.driver.find_element_by_xpath('//span[contains(., "Save and Next")]').click()
+        print "Saving scan times..."
+        sleep(3)
+
+        #Skip authenticated scanning
+        self.driver.find_element_by_xpath('//span[contains(., "Save and Next")]').click()
+        print "Saving authenticated scanning..."
+        sleep(2)
+
+        #Set targets
+        self.setValue(self.driver.find_element_by_id('scanTemplateTargets'), ','.join(ips))
+        self.driver.find_element_by_xpath('//span[contains(., "Save and Next")]').click()
+        print "Saving targets..."
+        sleep(2)
+
+        #Activate
+        self.setValue(self.driver.find_element_by_id('validIP'), '1.1.1.1')
+        self.setValue(self.driver.find_element_by_id('invalidIP'), '1.1.1.1')
+        self.driver.find_element_by_xpath('//input[@name="scan.scanTemplate.manualAssessment"]').click()
+        self.driver.find_element_by_xpath('//span[contains(., "Save and Next")]').click()
+        print "Saving activation..."
+        sleep(2)
+
+        #Complete
+        self.driver.find_element_by_id('SaveAndCloseButtonScanSchedule').click()
+        print "Completing scan setup..."
+        sleep(2)
