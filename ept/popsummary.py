@@ -4,11 +4,15 @@
 from TraceNmapParser import NmapParser
 from sys import argv
 from json import dumps
-import os,csv
+import os,csv,re
 
 
+echoes = []
 with open(argv[1]) as f:
-    echoes = [x.strip() for x in f]
+    for ln in f:
+        m = re.search('\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', ln)
+        if m:
+            echoes.append(m.group(0))
 
 if(argv[2] == "-t"):
     type=argv[3]
