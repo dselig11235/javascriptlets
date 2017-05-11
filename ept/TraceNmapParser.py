@@ -12,32 +12,39 @@ class NmapParser:
     def __init__(self):
         self.data = []
 
-    def open(self, filenames):
-        for filename in filenames:
-            with open(filename, 'r') as file:
-                contents = sorted(file.read().split('\n'))
-            for item in contents:
-                ip_addr = item[item.find(":")+2:item.find("(")-1]
-                info = re.findall("(?<=Ports: )(.*?)(?=Ignored)", item)
-                if len(info) == 0:
-                    info = re.findall("(?<=Ports: )(.*?)(?=Seq Index)", item)
-                if len(info) == 0:
-                    info = re.findall("(?<=Ports: )(.*?)(?=$)", item)
-                if len(info) != 0:
-                    for i in info:
-                        result = i.split(',')
-                        for x in result:
-                            port = re.findall("([0-9]+/open/.*?)/", x)
-                            if "[]" in str(port):
-                                continue
-                            port = port[0].replace("/open", "")
-                            service = re.findall("(?<=//)(.*?)(?=/)", x)[0]
-                            version = x.split("/")[-2]
-                            if len(version) > 40:
-                                version = version[:40]
-                            if len(version) == 0:
-                                version = "-"
-                            self.data.append([ip_addr, port, service, version])
+    def open(self, filenames, type="gnmap"):
+        if type == "csv":
+            import csv
+            for filename in filenames:
+                with open(filename) as csv_file:
+                    for row in csv.reader(csv_file):
+                        self.data.append(row)
+        elif type == "gnmap":
+            for filename in filenames:
+                with open(filename, 'r') as file:
+                    contents = sorted(file.read().split('\n'))
+                for item in contents:
+                    ip_addr = item[item.find(":")+2:item.find("(")-1]
+                    info = re.findall("(?<=Ports: )(.*?)(?=Ignored)", item)
+                    if len(info) == 0:
+                        info = re.findall("(?<=Ports: )(.*?)(?=Seq Index)", item)
+                    if len(info) == 0:
+                        info = re.findall("(?<=Ports: )(.*?)(?=$)", item)
+                    if len(info) != 0:
+                        for i in info:
+                            result = i.split(',')
+                            for x in result:
+                                port = re.findall("([0-9]+/open/.*?)/", x)
+                                if "[]" in str(port):
+                                    continue
+                                port = port[0].replace("/open", "")
+                                service = re.findall("(?<=//)(.*?)(?=/)", x)[0]
+                                version = x.split("/")[-2]
+                                if len(version) > 40:
+                                    version = version[:40]
+                                if len(version) == 0:
+                                    version = "-"
+                                self.data.append([ip_addr, port, service, version])
 
     def prettyPrint(self):
         #grab offset
