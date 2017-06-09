@@ -1,4 +1,5 @@
 from time import sleep
+from selenium.common.exceptions import NoSuchElementException
 from selenium import webdriver
 import os, re
 
@@ -22,6 +23,16 @@ def repeatOnError(fn, test, *args, **kwargs):
             return x
 
 class CSO(object):
+    def moveToTop(self, company):
+        self.driver.find_element_by_xpath('//a[@href="/secure/BackendAdmin/ViewClustScanners.html"]').click()
+        self.driver.find_element_by_xpath('//a[contains(., "5.0 Scanners")]').click()
+        while True:
+            try:
+                print "moving %s up" % company
+                self.driver.find_element_by_xpath('//table[@id="templatesTable"]/tbody/tr[td[contains(., "' + company + '")]]/td/a[img[@src="/images/arrowup.gif"]]').click()
+                sleep(1)
+            except NoSuchElementException:
+                break
     def start(self):
         self.driver = webdriver.Chrome('/usr/lib/chromium/chromedriver')
         self.driver.get('https://cso.tracesecurity.com/')
