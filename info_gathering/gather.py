@@ -6,6 +6,8 @@ from selenium.common.exceptions import NoSuchElementException
 import os, re, imp
 from interactive import print_good, print_error, print_status, prompt
 from ConfigParser import ConfigParser, NoOptionError, NoSectionError
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+
 
 
 def repeatOnError(fn, test, *args, **kwargs):
@@ -25,7 +27,13 @@ class Web(object):
         self.creds = ConfigParser()
         self.creds.read(credfile)
     def start(self):
-        self.driver = webdriver.Chrome('/usr/lib/chromium/chromedriver')
+        #self.driver = webdriver.Chrome('/usr/bin/chromedriver')
+        dcap = dict(DesiredCapabilities.PHANTOMJS)
+        dcap["phantomjs.page.settings.userAgent"] = (
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/53 "
+            "(KHTML, like Gecko) Chrome/15.0.87")
+        self.driver = webdriver.PhantomJS(desired_capabilities=dcap)
+        self.driver.set_window_size(1024, 768)
     def setValue(self, element, value):
         if element.tag_name == 'textarea':
             self.driver.execute_script('arguments[0].innerText = arguments[1]', element, value)
@@ -36,7 +44,7 @@ class Web(object):
     def clickOn(self, s):
         self.driver.find_element_by_css_selector(s).click()
     def screenshot(self, filename):
-        prompt('Adjust window for screenshot and press Enter')
+        #prompt('Adjust window for screenshot and press Enter')
         self.driver.save_screenshot(filename)
         print_status('Saved screenshot to ' + filename)
 
@@ -143,6 +151,7 @@ class Web(object):
             except NoSuchElementException:
                 return False
             return True
+
         repeatOnError(scrollToBottom, lambda x: x)
 
         with open(os.path.join(self.path, 'searchisback.js')) as f:
