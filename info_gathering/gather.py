@@ -215,7 +215,6 @@ if __name__ == "__main__":
         exit(1)
 
 
-    exit(0)
     w = Web(options.credential_file, headless=options.headless)
     w.start()
     w.goData(options.domain)
