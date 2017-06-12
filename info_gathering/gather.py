@@ -173,6 +173,7 @@ if __name__ == "__main__":
     parser.add_option('-c', '--credentials', dest="credential_file", help="ini style file with credentials")
     parser.add_option('-n', '--company', help='company name')
     parser.add_option('-d', '--domain', help='company domain')
+    parser.add_option('-l', '--headless', help='use phantomjs for headless operation')
     (options, args) = parser.parse_args()
     if options.credential_file is None or options.company is None or options.domain is None:
         parser.print_usage()
