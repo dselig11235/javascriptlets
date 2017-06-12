@@ -186,6 +186,7 @@ class Web(object):
 
 if __name__ == "__main__":
     from optparse import OptionParser
+    from socket import getaddrinfo, gaierror
 
     usage = "usage: %prog [options] arg"
     parser = OptionParser(usage)
@@ -198,7 +199,23 @@ if __name__ == "__main__":
         parser.print_usage()
         parser.print_help()
         exit(1)
+    if not os.path.isfile(options.credential_file):
+        print_error("'{}' is not a file".format(options.credential_file))
+        exit(1)
+    if re.match('\S', options.company) is None:
+        print_error("'{}' is not a valid company name".format(options.company))
+        exit(1)
+    if re.match('[^\.]{1,63}(\.[^\.]{1,63})+', options.domain) is None:
+        print_error("'{}' is not a valid domain".format(options.domain))
+        exit(1)
+    try:
+        getaddrinfo(options.domain, None)
+    except gaierror:
+        print_error("DNS lookup of '{}' failed".format(options.domain))
+        exit(1)
 
+
+    exit(0)
     w = Web(options.credential_file, headless=options.headless)
     w.start()
     w.goData(options.domain)
