@@ -23,17 +23,20 @@ def repeatOnError(fn, test, *args, **kwargs):
 
 class Web(object):
     path = os.path.dirname(os.path.realpath(__file__))
-    def __init__(self, credfile):
+    def __init__(self, credfile, headless=False):
         self.creds = ConfigParser()
         self.creds.read(credfile)
+        self.headless = headless
     def start(self):
-        #self.driver = webdriver.Chrome('/usr/bin/chromedriver')
-        dcap = dict(DesiredCapabilities.PHANTOMJS)
-        dcap["phantomjs.page.settings.userAgent"] = (
-            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/53 "
-            "(KHTML, like Gecko) Chrome/15.0.87")
-        self.driver = webdriver.PhantomJS(desired_capabilities=dcap)
-        self.driver.set_window_size(1024, 768)
+        if self.headless:
+            dcap = dict(DesiredCapabilities.PHANTOMJS)
+            dcap["phantomjs.page.settings.userAgent"] = (
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/53 "
+                "(KHTML, like Gecko) Chrome/15.0.87")
+            self.driver = webdriver.PhantomJS(desired_capabilities=dcap)
+            self.driver.set_window_size(1024, 768)
+        else:
+            self.driver = webdriver.Chrome('/usr/bin/chromedriver')
     def setValue(self, element, value):
         if element.tag_name == 'textarea':
             self.driver.execute_script('arguments[0].innerText = arguments[1]', element, value)
@@ -44,7 +47,10 @@ class Web(object):
     def clickOn(self, s):
         self.driver.find_element_by_css_selector(s).click()
     def screenshot(self, filename):
-        #prompt('Adjust window for screenshot and press Enter')
+        if self.headless:
+            sleep(4)
+        else:
+            prompt('Adjust window for screenshot and press Enter')
         self.driver.save_screenshot(filename)
         print_status('Saved screenshot to ' + filename)
 
@@ -79,13 +85,20 @@ class Web(object):
         self.screenshot('Employee Information Available on data.com.png')
 
         with open(os.path.join(self.path, 'data.js')) as f:
-            self.driver.execute_script(f.read())
+            script = f.read()
+        names = []
+        while True:
+            #self.driver.execute_script(script)
+            names += [name.text.encode('utf-8') for name in 
+                    self.driver.find_elements_by_css_selector('.td-name') if re.match('\S', name.text) is not None]
+            try:
+                self.clickOn('img#next.table-navigation-next-image-active')
+            except NoSuchElementException:
+                break
         print_status('executing script to extract names')
 
         with open('names.data', 'w') as f:
-            names = self.driver.find_elements_by_tag_name('div')
-            for name in names:
-                f.write(name.text + "\n")
+            f.write('\n'.join(names))
         print_status('Saved %d names to "names.data"' % len(names))
         print_good('Finished enumeration using data.com')
         print
@@ -125,7 +138,7 @@ class Web(object):
         with open('emails.hunter', 'w') as f:
             emails = self.driver.find_elements_by_css_selector('p:nth-child(1) > div')
             for email in emails:
-                f.write(email.text + "\n")
+                f.write(email.text.encode('utf-8') + "\n")
             print_status('Saved %d emails to emails.hunter' % len(emails))
         print_good('Finished enumeration using hunter.io')
         print
@@ -144,22 +157,28 @@ class Web(object):
         self.setValue(self.driver.find_element_by_id('company'), company)
         self.clickOn('#people button.submit')
         self.screenshot('Employee Information Available on Facebook.png')
-        def scrollToBottom():
-            self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
-            try:
-                self.driver.find_element_by_id('browse_end_of_results_footer')
-            except NoSuchElementException:
-                return False
-            return True
+        def scroller(max=75):
+            num_scrolls = {'n':0, 'max': max}
+            def scrollToBottom():
+                print_status("{}: Scrolling for more results on Facebook".format(num_scrolls['n']))
+                num_scrolls['n']+=1
+                self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
+                try:
+                    self.driver.find_element_by_id('browse_end_of_results_footer')
+                except NoSuchElementException:
+                    if num_scrolls['n'] < num_scrolls['max']:
+                        return False
+                return True
+            return scrollToBottom
 
-        repeatOnError(scrollToBottom, lambda x: x)
+        repeatOnError(scroller(), lambda x: x)
 
         with open(os.path.join(self.path, 'searchisback.js')) as f:
             self.driver.execute_script(f.read())
         with open('names.facebook', 'w') as f:
             names = self.driver.find_elements_by_tag_name('div')
             for name in names:
-                f.write(name.text + "\n")
+                f.write(name.text.encode('utf-8') + "\n")
         print_status('Saved %d names to "names.facebook"' % len(names))
         print_good('Finished enumeration using searchisback')
         print
@@ -173,14 +192,14 @@ if __name__ == "__main__":
     parser.add_option('-c', '--credentials', dest="credential_file", help="ini style file with credentials")
     parser.add_option('-n', '--company', help='company name')
     parser.add_option('-d', '--domain', help='company domain')
-    parser.add_option('-l', '--headless', help='use phantomjs for headless operation')
+    parser.add_option('-l', '--headless', action="store_true", help='use phantomjs for headless operation')
     (options, args) = parser.parse_args()
     if options.credential_file is None or options.company is None or options.domain is None:
         parser.print_usage()
         parser.print_help()
         exit(1)
 
-    w = Web(options.credential_file)
+    w = Web(options.credential_file, headless=options.headless)
     w.start()
     w.goData(options.domain)
     w.goHunter(options.domain)
