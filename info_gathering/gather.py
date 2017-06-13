@@ -182,9 +182,29 @@ class Web(object):
         print_status('Saved %d names to "names.facebook"' % len(names))
         print_good('Finished enumeration using searchisback')
         print
+    def goDiscover(self, domain):
+        if "HOME" not in os.environ:
+            print_error("Don't know where to find discover files ($HOME not set)")
+            return False
+        path = 'file:///{}/data/{}'.format(os.environ['HOME'], domain)
+        self.driver.get(path + '/data/hosts.htm')
+        self.screenshot('Host Enumeration {} using discover.png'.format(domain))
+        self.driver.get(path + '/pages/netcraft.htm')
+        self.screenshot('Network History and Information of {} using discover.png'.format(domain))
+        self.driver.get(path + '/data/emails.htm')
+        self.screenshot('Email Enumeration of {} using discover.png'.format(domain))
+        emails = self.driver.find_element_by_tag_name('pre').text
+        print_status('Saving {} emails to emails.discover'.format(len(emails.split('\n'))))
+        with open('emails.discover', 'w') as f:
+            f.write(emails)
+        self.driver.get(path + '/data/names.htm')
+        self.screenshot('Name Enumeration of {} using discover.png'.format(domain))
+        names = self.driver.find_element_by_tag_name('pre').text
+        print_status('Saving {} names to names.discover'.format(len(names.split('\n'))))
+        with open('names.discover', 'w') as f:
+            f.write(names)
 
-
-if __name__ == "__main__":
+if __name__ == "__dontrun__":
     from optparse import OptionParser
     from socket import getaddrinfo, gaierror
 
@@ -217,7 +237,8 @@ if __name__ == "__main__":
 
     w = Web(options.credential_file, headless=options.headless)
     w.start()
-    w.goData(options.domain)
-    w.goHunter(options.domain)
-    w.goFacebook(options.company)
-    w.driver.close()
+    #w.goData(options.domain)
+    #w.goHunter(options.domain)
+    #w.goFacebook(options.company)
+    w.goDiscover(options.domain)
+    #w.driver.close()
