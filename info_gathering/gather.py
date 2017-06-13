@@ -204,7 +204,7 @@ class Web(object):
         with open('names.discover', 'w') as f:
             f.write(names)
 
-if __name__ == "__dontrun__":
+if __name__ == "__main__":
     from optparse import OptionParser
     from socket import getaddrinfo, gaierror
 
@@ -237,8 +237,8 @@ if __name__ == "__dontrun__":
 
     w = Web(options.credential_file, headless=options.headless)
     w.start()
-    #w.goData(options.domain)
-    #w.goHunter(options.domain)
-    #w.goFacebook(options.company)
+    w.goData(options.domain)
+    w.goHunter(options.domain)
+    w.goFacebook(options.company)
     w.goDiscover(options.domain)
-    #w.driver.close()
+    w.driver.close()
