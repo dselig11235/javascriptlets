@@ -10,9 +10,9 @@ import os,csv,re
 echoes = []
 with open(argv[1]) as f:
     for ln in f:
-        m = re.search('\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', ln)
+        m = re.search('(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', ln)
         if m:
-            echoes.append(m.group(0))
+            echoes.append(m.group(1))
 
 if(argv[2] == "-t"):
     type=argv[3]

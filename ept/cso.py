@@ -1,7 +1,9 @@
 from time import sleep
+from ConfigParser import ConfigParser, NoOptionError, NoSectionError
 from selenium.common.exceptions import NoSuchElementException
 from selenium import webdriver
 import os, re
+from interactive import *
 
 def getTitleFromFilename(filename):
     title = os.path.basename(filename)
@@ -23,25 +25,30 @@ def repeatOnError(fn, test, *args, **kwargs):
             return x
 
 class CSO(object):
-    def moveToTop(self, company):
-        self.driver.find_element_by_xpath('//a[@href="/secure/BackendAdmin/ViewClustScanners.html"]').click()
-        self.driver.find_element_by_xpath('//a[contains(., "5.0 Scanners")]').click()
-        while True:
-            try:
-                print "moving %s up" % company
-                self.driver.find_element_by_xpath('//table[@id="templatesTable"]/tbody/tr[td[contains(., "' + company + '")]]/td/a[img[@src="/images/arrowup.gif"]]').click()
-                sleep(1)
-            except NoSuchElementException:
-                break
+    def __init__(self, credfile=os.path.join(os.environ['HOME'], "credentials.ini"), headless=False):
+        self.headless = headless
+        creds = ConfigParser()
+        creds.read(credfile)
+        self.creds = {}
+        try:
+            self.creds['login'] = self.creds.get('CSO', 'login')
+            self.creds['password'] = self.creds.get('CSO', 'password')
+        except NoOptionError, NoSectionError:
+            print_debug("Credentials for CSO not found")
+            self.creds = None
+
     def start(self):
         self.driver = webdriver.Chrome('/usr/lib/chromium/chromedriver')
         self.driver.get('https://cso.tracesecurity.com/')
         self.login()
-        pass
+
     def login(self):
-        self.driver.find_element_by_id('username').send_keys('dselig')
-        self.driver.find_element_by_id('password').send_keys('pa$$4Trace')
-        self.driver.find_element_by_id('LoginButton').click()
+        if self.creds is not None:
+            self.driver.find_element_by_id('username').send_keys(self.creds['login'])
+            self.driver.find_element_by_id('password').send_keys(self.creds['password'])
+            self.driver.find_element_by_id('LoginButton').click()
+        else:
+            prompt('Enter credentials and hit enter when done')
 
     def setValue(self, element, value):
         if element.tag_name == 'textarea':
@@ -56,6 +63,16 @@ class CSO(object):
         self.clickOn('#MyAssignments')
         sleep(2)
         self.clickOn('#ui-accordion-accordion-panel-1 > div:nth-child(6) > a')
+    def moveToTop(self, company):
+        self.driver.find_element_by_xpath('//a[@href="/secure/BackendAdmin/ViewClustScanners.html"]').click()
+        self.driver.find_element_by_xpath('//a[contains(., "5.0 Scanners")]').click()
+        while True:
+            try:
+                print "moving %s up" % company
+                self.driver.find_element_by_xpath('//table[@id="templatesTable"]/tbody/tr[td[contains(., "' + company + '")]]/td/a[img[@src="/images/arrowup.gif"]]').click()
+                sleep(1)
+            except NoSuchElementException:
+                break
     def getVulnerabilities(self):
         vulns = []
         vulnLinks = self.driver.find_elements_by_css_selector('#vulnTable>tbody>tr>td:nth-child(2)>a')
@@ -77,8 +94,20 @@ class CSO(object):
             p = self.driver.find_element_by_xpath('//div[div[@id="dialogVulnDetails"]]')
             p.find_element_by_css_selector('button[title="close"]').click()
         return vulns
+    #Timeout can be -1 for infinite
+    def css(selector, timeout=5, msg=None):
+        while timeout !== 0:
+            timeout--
+            try:
+                return self.driver.find_element_by_css_selector(selector)
+            except NoSuchElementException:
+                if msg is not None:
+                    print "msg".format(timeout=timeout, selector=selector)
+        return None
+
     def addFigure(self, filename):
-        iframe = self.driver.find_element_by_css_selector('iframe')
+        repeatOnError(
+        iframe = self.css('iframe')
         self.driver.switch_to.frame(iframe)
         try:
             upload_radio = self.driver.find_element_by_id('figureTypeImage')

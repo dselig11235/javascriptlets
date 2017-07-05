@@ -15,7 +15,7 @@ def repeatOnError(fn, test, *args, **kwargs):
         try:
             x = fn(*args, **kwargs)
         except Exception as e:
-            print_error('Exception occurred: ' + e.message)
+            print_error('{}: {}'.format(type(e), e.message))
             sleep(1)
             continue
         if(test(x)):
